@@ -8,6 +8,10 @@ Nesta avaliação vocês irão desenvolver um protótipo de uma fechadura eletr�
 
 O comportamento esperado é o seguinte: O sistema deve aguardar por uma sequência de 4 apertos dos botões e verificar se uma senha foi corretamente digitada, a cada vez que o usuário aperta o botão, o OLED deve exibir um novo `*`, ao completar 4 dígitos, o sistema deve verificar se a sequencia foi correta e então abrir a fechadura (girar o motor).
 
+A senha padrão deve ser: 
+
+- `1, 3, 2, 3`
+
 Vocês devem desenvolver o firmware como indicado a seguir:
 
 ![](imgs/firmware.png)
@@ -38,7 +42,7 @@ Segue as seguintes rubricas
 - [ ] Botões da OLED funcionando com interrupcão (IRS)
 - [ ] `xQueueBTN` usada para envio de qual botão foi apertado da IRS
 - [ ] `xSemaphoreMotor` controla quando o motor vai girar
-- [ ] `senha_task` verifica a senha e determina se motor deve ou não girar 
+- [ ] `senha_task` verifica a senha e determina se motor deve ou não girar, a senha padrão deve ser `1, 3, 2, 3`
 - [ ] `motor_task` quando semáforo liberado, rotaciona o motor em 180 graus
 - [ ] `OLED` exibe o tamanho da senha digitada em `*`, deve limpar quando senha digitada
 
