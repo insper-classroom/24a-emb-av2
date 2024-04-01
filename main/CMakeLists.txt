@@ -2,5 +2,5 @@ add_executable(main
         main.c
 )
 
-target_link_libraries(main pico_stdlib freertos hardware_adc hardware_pwm)
+target_link_libraries(main pico_stdlib oled1_lib freertos)
 pico_add_extra_outputs(main)
