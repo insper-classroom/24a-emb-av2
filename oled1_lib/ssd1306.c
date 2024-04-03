@@ -1,12 +1,12 @@
 #include "ssd1306.h"
 
-inline void spi_cs_select(void) {
+static inline void spi_cs_select(void) {
     asm volatile("nop \n nop \n nop");
     gpio_put(PIN_CS, 0); // Active low
     asm volatile("nop \n nop \n nop");
 }
 
-inline void spi_cs_deselect(void) {
+static inline void spi_cs_deselect(void) {
     asm volatile("nop \n nop \n nop");
     gpio_put(PIN_CS, 1);
     asm volatile("nop \n nop \n nop");
@@ -58,6 +58,7 @@ void gfx_mono_ssd1306_put_byte(uint8_t page, uint8_t column, uint8_t data,
 
     ssd1306_set_page_address(page);
     ssd1306_set_column_address(column);
+
 
     ssd1306_write_data(data);
 }
