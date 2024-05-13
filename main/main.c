@@ -52,7 +52,6 @@ void oled1_demo_2(void *p) {
     gfx_init(&disp, 128, 32);
 
     printf("Inicializando btn and LEDs\n");
-    oled1_btn_led_init();
 
     while (1) {
 
@@ -76,9 +75,10 @@ void oled1_demo_2(void *p) {
 int main() {
     stdio_init_all();
 
-    // trocar as tasks ativas, apenas uma por vez!
-    xTaskCreate(oled1_demo_2, "Demo 2", 4095, NULL, 1, NULL);
+    // inicializa botões e leds
+    oled1_btn_led_init();
 
+    xTaskCreate(oled1_demo_2, "Demo 2", 4095, NULL, 1, NULL);
     vTaskStartScheduler();
 
     while (true)
