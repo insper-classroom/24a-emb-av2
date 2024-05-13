@@ -36,10 +36,10 @@ A seguir um exemplo de log, nele conseguimos verificar a leitura do AFEC, e no s
  [ADC  ] 8s   4000
  [ADC  ] 9s   4004
  [ADC  ] 10s  4002
- [ADC  ] 11s  4001
+ [ADC  ] 11s  3001
  [ADC  ] 12s  4001
- [ADC  ] 13s  4001
- [ADC  ] 14s  4001
+ [ADC  ] 13s  4002
+ [ADC  ] 14s  4004
  [ALARM] 15s  ADC 
 ```
 
@@ -58,7 +58,11 @@ A task, ao receber os dados deve realizar a seguinte ação:
 1. Verificar a condicão de alarme:
     - 5 segundos com o valor do ADC maior que 3000
     
-Caso a condição de alarme seja atingida enviar um alarme para a fila `xQueueAlarm` indicando que o alarme é do tipo AFEC.
+Caso a condição de alarme seja atingida enviar um alarme para o semáforo `xSemAlarmADC` indicando que o alarme foi gerado por conta do ADC.
+
+### `timer_callback`
+
+Um evento de timer gerado a cada `1s` que será responsável por fazer a leitura do ADC e enviar o valor lido para a fila `xQueueADC`. 
 
 ### `event_task` 
 
@@ -75,43 +79,48 @@ A task, ao receber os dados deve realizar a seguinte ação:
 1. Verificar a condição de alarme:
     - Dois botões pressionados ao mesmo tempo
     
-Caso a condição de alarme seja atingida, liberar o semáforo `xSemaphoreEventAlarm`.
-### task_alarm
+Caso a condição de alarme seja atingida, liberar o semáforo `xSemAlarmEvent`.
+
+### `alarm_task`
 
 Responsável por gerenciar cada um dos tipos de alarme diferente: `adc` e `event`. A cada ativacão do alarme a task deve emitir um Log pela serial, O alarme vai ser um simples pisca LED, para cada um dos alarmes vamos atribuir um LED diferente da placa OLED: 
 
 - `EVENT`: LED1
 - `ADC `: LED2
 
-Os alarmes são ativados pelos semáforos `xSemaphoreAfecAlarm` e `xSemaphoreEventAlarm`. Uma vez ativado o alarme, o mesmo deve ficar ativo até a placa reiniciar.
+Os alarmes são ativados pelos semáforos `xSemAlarmEvent` e `xSemAlarmADC`. Uma vez ativado o alarme, o mesmo deve ficar ativo até a placa reiniciar.
 
-Ao ativar um alarmme exibir no OLED um log simplificado (um por linha):
+Ao ativar um alarme exibir no OLED um log simplificado (um por linha):
 
 ```  
-mm:ss AFEC
-mm:ss Event
+TICK ADC
+TICK Event
 ```
 
+### `TICKs`
+
+Os ticks dão uma ĩndicaćão de tempo e devem indicar um valor absoluto desde que a placa foi inicializada. Para isso vocês devem usar o recurso do timer de tempo absoluto, converter o valor de `ms` para `s` ( `to_ms_since_boot(get_absolute_time());` ).
 
 ## Rubrica
 
 > Não possuir erro de qualidade de código detectado no github actions.
 
-- [ ] Leitura do AFEC via TC 1hz e envio do dado para a fila `xQueueAfec`
+- [ ] Leitura do ADC via callback do Timer em 1hz e envio do dado para a fila `xQueueADC`
+- [ ] Usa o tempo absoluto do timer para medir o `ticks`
 - [ ] Leitura dos botões do OLED via IRS e envio do dado para fila `xQueueEvent`
 - `task_afec`
-    - log:  `[AFEC ] DD:MM:YYYY HH:MM:SS $VALOR` 
+    - log:  `[ADC  ] TICKs $VALOR` 
     - alarme se o valor do AFEC estiver maior que 3000 durante 5s
-        - libera semáforo `xSemaphoreAfecAlarm`
+        - libera semáforo `xSemAlarmADC`
 - `task_event`
-    - log:  `[EVENT] DD:MM:YYYY HH:MM:SS $ID:$STATUS` 
+    - log:  `[EVENT] TICKs $ID:$STATUS` 
     - alarme se houver dois botões pressionados ao mesmo tempo
-        - libera semáforo `xSemaphoreEventAlarm`
+        - libera semáforo `xSemAlarmEvent`
 - `task_alarm`
-    - verifica dois semáforos: `xSemaphoreEventAlarm` e `xSemaphoreAfecAlarm`
-    - quanto liberado o semáforo, gerar o log:  `[ALARM] DD:MM:YYYY HH:MM:SS $ALARM` 
-    - piscar led 1 dado se alarm AFEC ativo (`xSemaphoreAfecAlarm`)
-    - piscar led 2 dado se alarm EVENT ativo (`xSemaphoreEventAlarm`)
+    - verifica dois semáforos: `xSemAlarmADC` e `xSemAlarmTicks`
+    - quanto liberado o semáforo, gerar o log:  `[ALARM] TICKs $ALARM` 
+    - piscar led 1 dado se alarm AFEC ativo (`xSemAlarmADC`)
+    - piscar led 2 dado se alarm EVENT ativo (`xSemAlarmEvent`)
     - Exibir no OLED as informações do alarme
     
 :bangbang: :warning: :bangbang: Não devem ser utilizadas **variáveis globais**, todo o processo deve ser feito através das filas e semáforos. :bangbang: :warning: :bangbang:
