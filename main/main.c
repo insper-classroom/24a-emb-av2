@@ -12,6 +12,8 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+#include "hardware/adc.h"
+
 const uint BTN_1_OLED = 28;
 const uint BTN_2_OLED = 26;
 const uint BTN_3_OLED = 27;
