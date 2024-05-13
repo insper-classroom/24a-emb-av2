@@ -6,7 +6,7 @@ Prezado aluno:
 
 - A prova é prática, com o objetivo de avaliar sua compreensão a cerca do conteúdo da disciplina. 
 - É permitido consulta a todo material pessoal (suas anotações, códigos), lembre que você mas não pode consultar outros seres vivos!
-- chatgpt / copilot/ ... liberados!
+- chatgpt / copilot / ... liberados!
 - Duração total: 2h 
 
 Sobre a avaliacão:
@@ -14,15 +14,15 @@ Sobre a avaliacão:
 1. Você deve satisfazer ambos os requisitos: funcional, estrutura de código e qualidade de código para ter o aceite na avaliação;
 1. A avaliação de C deve ser feita em sala de aula por um dos membros da equipe (Professor ou Técnico);
 1. A entrega do código deve ser realizada no git.
-1. Realizar um commit a cada 15 minutos, vamos avisar vcs!
+1. Realizar um commit a cada 15 minutos, vamos avisar vocês!
 
 ## Entrega
 
 Vamos criar um protótipo de um datalogger, onde um sistema embarcado coleta periodicamente valores e eventos do mundo real, formata os dados e envia para um dispositivo externo. O envio da informação será feito pela UART. O datalogger também irá verificar algumas condições de alarme.
 
-O firmware vai ser composto por três tasks: `adc_task`, `events_task` e `alarm_task` além de duas filas: `xQueueEvent` e `xQueueBtn`. A ideia é que a cada evento de botão ou a cada novo valor do ADC, um log formatado seja enviado pela UART (printf) e uma verificação das condições de alarme checadas, se um alarme for detectado a task_alarm deve ser iniciada. O log (UART/printf) deve possuir um timestamp que indicará quando o dado foi lido pelo sistema (em segundos desde o ligamento).
+O firmware vai ser composto por três tasks: `adc_task`, `events_task` e `alarm_task` além de duas filas: `xQueueEvent` e `xQueueBtn`. A ideia é que a cada evento de botão ou a cada novo valor do ADC, um log formatado seja enviado pela UART (printf) e uma verificação das condições de alarme checadas, se um alarme for detectado a task_alarm deve ser iniciada. O log (UART/printf) deve possuir um timestamp que indicará quando o dado foi lido pelo sistema (em segundos, desde o que o sistema foi iniciado).
 
-A seguir um exemplo de log, nele conseguimos verificar a leitura do AFEC, e no segundo 04 (5ª do log) o botão 1 foi pressionado, e depois solto no segundo 05. No segundo 06 o AFEC atinge um valor maior que o limite e fica assim por mais 5 segundos, ativando o alarme no segundo 9.
+A seguir um exemplo de log, nele conseguimos verificar a leitura do AFEC, e no segundo 04 (5ª do log) o botão 1 foi pressionado, e depois solto no segundo 07. No segundo 08 (9ª do log) o AFEC atinge um valor maior que o limite e fica assim por mais 5 segundos, ativando o alarme no segundo 14.
 
 ``` 
  [ADC  ] 1s   1220
@@ -39,19 +39,25 @@ A seguir um exemplo de log, nele conseguimos verificar a leitura do AFEC, e no s
  [ADC  ] 11s  3001
  [ADC  ] 12s  4001
  [ADC  ] 13s  4002
- [ADC  ] 14s  4004
- [ALARM] 15s  ADC 
+ [ALARM] 14s  ADC 
 ```
 
 O digrama a seguir deve ser seguido no desenvolvimento do firmware:
 
 ![](imgs/firmware.png)
 
+### `TICKs`
+
+Os ticks dão uma indicação de tempo e devem indicar um valor absoluto desde que a placa foi inicializada. Para isso vocês devem usar o recurso do timer de tempo absoluto, converter o valor de `ms` para `s`:
+```
+to_ms_since_boot(get_absolute_time());.
+```
+
 ### `adc_task`
 
-A `adc_task` vai ser responsável por coletar dados de uma entrada analógica via um callback de Timer, os dados devem ser enviados do *callback* do TIMER via a fila `xQueueADC` a uma taxa de uma amostra por segundo (1hz). A cada novo dado do ADC a condição de alarme deve ser verificada, o alarme de ADC será liberado se o ADC ficar por 5 segundos no mesmo valor.
+A `adc_task` vai ser responsável por coletar dados de uma entrada analógica via um callback de Timer, os dados devem ser enviados do *callback* do TIMER via a fila `xQueueADC` com a frequência de uma amostra por segundo (1hz). A cada novo dado do ADC a condição de alarme deve ser verificada, o alarme de ADC será liberado se o ADC ficar por 5 segundos no mesmo valor.
 
-A task, ao receber os dados deve realizar a seguinte ação:
+A adc_task, ao receber os dados deve realizar a seguinte ação:
 
 1. Enviar pela UART o novo valor no formato a seguir:
     - `[ADC  ] TICK  $VALOR`  --->  ( `$VALOR` deve ser o valor lido da fila )
@@ -70,7 +76,7 @@ A `event_task` será responsável por ler eventos de botão (subida, descida), p
 
 A cada evento a task deve formatar e enviar um log pela UART e também verificar a condição de alarme.
 
-A task, ao receber os dados deve realizar a seguinte ação:
+A event_task, ao receber os dados deve realizar a seguinte ação:
 
 1. Enviar pela UART o novo valor no formato a seguir:
     - `[EVENT] TICK $ID:$status`
@@ -85,8 +91,8 @@ Caso a condição de alarme seja atingida, liberar o semáforo `xSemAlarmEvent`.
 
 Responsável por gerenciar cada um dos tipos de alarme diferente: `adc` e `event`. A cada ativacão do alarme a task deve emitir um Log pela serial, O alarme vai ser um simples pisca LED, para cada um dos alarmes vamos atribuir um LED diferente da placa OLED: 
 
-- `EVENT`: LED1
-- `ADC `: LED2
+- `[ALARM] EVENT`: LED1
+- `[ALARM] ADC `: LED2
 
 Os alarmes são ativados pelos semáforos `xSemAlarmEvent` e `xSemAlarmADC`. Uma vez ativado o alarme, o mesmo deve ficar ativo até a placa reiniciar.
 
@@ -97,9 +103,6 @@ TICK ADC
 TICK Event
 ```
 
-### `TICKs`
-
-Os ticks dão uma ĩndicaćão de tempo e devem indicar um valor absoluto desde que a placa foi inicializada. Para isso vocês devem usar o recurso do timer de tempo absoluto, converter o valor de `ms` para `s` ( `to_ms_since_boot(get_absolute_time());` ).
 
 ## Rubrica
 
@@ -107,7 +110,7 @@ Os ticks dão uma ĩndicaćão de tempo e devem indicar um valor absoluto desde 
 
 - [ ] Leitura do ADC via callback do Timer em 1hz e envio do dado para a fila `xQueueADC`
 - [ ] Usa o tempo absoluto do timer para medir o `ticks`
-- [ ] Leitura dos botões do OLED via IRS e envio do dado para fila `xQueueEvent`
+- [ ] Leitura dos botões do OLED via ISR e envio do dado para fila `xQueueEvent`
 - `task_afec`
     - log:  `[ADC  ] TICKs $VALOR` 
     - alarme se o valor do AFEC estiver maior que 3000 durante 5s
@@ -119,8 +122,8 @@ Os ticks dão uma ĩndicaćão de tempo e devem indicar um valor absoluto desde 
 - `task_alarm`
     - verifica dois semáforos: `xSemAlarmADC` e `xSemAlarmTicks`
     - quanto liberado o semáforo, gerar o log:  `[ALARM] TICKs $ALARM` 
-    - piscar led 1 dado se alarm AFEC ativo (`xSemAlarmADC`)
-    - piscar led 2 dado se alarm EVENT ativo (`xSemAlarmEvent`)
+    - piscar led 1 se o alarm AFEC ativo (`xSemAlarmADC`)
+    - piscar led 2 se o alarm EVENT ativo (`xSemAlarmEvent`)
     - Exibir no OLED as informações do alarme
     
 :bangbang: :warning: :bangbang: Não devem ser utilizadas **variáveis globais**, todo o processo deve ser feito através das filas e semáforos. :bangbang: :warning: :bangbang:
